@@ -9,7 +9,7 @@ const TARGET = 'https://apollouniversity.digiicampus.com/V2/#/home';
 
 (async () => {
   const { browser, page } = await connect({
-    headless: false,
+    headless: true,
     turnstile: true,      // auto-solve Turnstile checkbox
     disableXvfb: true,    // Windows
     ignoreAllFlags: false,

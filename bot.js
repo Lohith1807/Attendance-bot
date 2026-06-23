@@ -150,8 +150,7 @@ bot.on('callback_query', async (query) => {
 async function fetchAttendanceData(termId) {
     try {
         const authData = JSON.parse(fs.readFileSync('data/auth_dump.json', 'utf8'));
-        const userInfo = JSON.parse(authData.localStorage.userInfo);
-        const authToken = userInfo.token;
+        const authToken = authData.token;
 
         const ATTENDANCE_API_URL = `https://apollouniversity.digiicampus.com/api/attendance/student/1023069/term/${termId}`;
 

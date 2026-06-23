@@ -4,8 +4,7 @@ const path = require('path');
 
 // 1. Read the token from the dump file we created
 const authData = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/auth_dump.json'), 'utf8'));
-const userInfo = JSON.parse(authData.localStorage.userInfo);
-const token = userInfo.token;
+const token = authData.token;
 
 // 2. The API URL to get attendance (Update this to the exact API endpoint!)
 const ATTENDANCE_API_URL = 'https://apollouniversity.digiicampus.com/api/attendance/student/1023069/term/151';
@@ -22,8 +21,7 @@ async function fetchAttendance() {
                 'Accept': 'application/json, text/plain, */*',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
                 'Origin': 'https://apollouniversity.digiicampus.com',
-                'Referer': 'https://apollouniversity.digiicampus.com/userProfileCard/academics/1023069',
-                'Cookie': authData.cookies.map(c => `${c.name}=${c.value}`).join('; ')
+                'Referer': 'https://apollouniversity.digiicampus.com/userProfileCard/academics/1023069'
             }
         });
 

@@ -76,22 +76,36 @@ const PASSWORD = process.env.PASSWORD;
 
         // Type the credentials
         console.log('Entering credentials...');
-        await page.type('#registrationId', REG_NO, { delay: 50 });
-        await page.type('#password', PASSWORD, { delay: 50 });
+        await page.waitForSelector('#registrationId', { visible: true });
+        
+        // Use evaluate to set value and dispatch events (React-friendly way)
+        await page.evaluate((id, pwd) => {
+            const idField = document.querySelector('#registrationId');
+            const pwdField = document.querySelector('#password');
+            
+            // React specific value setter
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            
+            nativeInputValueSetter.call(idField, id);
+            idField.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            nativeInputValueSetter.call(pwdField, pwd);
+            pwdField.dispatchEvent(new Event('input', { bubbles: true }));
+        }, REG_NO, PASSWORD);
+        
+        await new Promise(r => setTimeout(r, 1000));
 
         // Submit the form
         console.log('Submitting form...');
         // We attempt to click the submit button. Since we don't have its ID, we look for a submit button.
         const loginButton = await page.$('button[type="submit"]');
         if (loginButton) {
-            await Promise.all([
-                page.waitForNavigation({ waitUntil: 'networkidle2' }),
-                loginButton.click()
-            ]);
-            console.log('✅ Login successful!');
-
-            // Wait a few seconds for the app to fully load and store tokens
-            await new Promise(r => setTimeout(r, 3000));
+            await loginButton.click();
+            console.log('✅ Clicked login, waiting for redirect...');
+            // Wait for 20 seconds to allow the SPA to process the login and set tokens
+            await new Promise(r => setTimeout(r, 20000));
+            await page.screenshot({path: path.join(__dirname, '../data/screenshot.png'), fullPage: true});
+            console.log('✅ Login wait complete. Screenshot saved.');
 
             console.log('\n--- Extracting Authentication Data ---');
 
@@ -118,14 +132,21 @@ const PASSWORD = process.env.PASSWORD;
                 return data;
             });
 
-            // Dump everything to a file
-            require('fs').writeFileSync(path.join(__dirname, '../data/auth_dump.json'), JSON.stringify({
-                cookies,
-                localStorage: localStorageData,
-                sessionStorage: sessionStorageData
-            }, null, 2));
+            try {
+                const userInfo = JSON.parse(localStorageData.userInfo);
+                const token = userInfo.token;
 
-            console.log('✅ Auth data saved to auth_dump.json');
+                // Dump ONLY the token to the file
+                require('fs').writeFileSync(path.join(__dirname, '../data/auth_dump.json'), JSON.stringify({
+                    token: token
+                }, null, 2));
+
+                console.log('✅ Auth token saved to auth_dump.json');
+                console.log('\n🔑 EXTRACTED TOKEN:', token);
+            } catch(e) {
+                console.log('\n⚠️ Could not parse token from localStorage. Data not saved.');
+            }
+            
             console.log('\n--------------------------------------\n');
 
         } else {
